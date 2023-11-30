@@ -1,0 +1,57 @@
+#!/bin/sh
+
+set -eu
+
+script_dir=$(dirname "$0")
+
+day_no=$(( $(grep -n pub src/solutions/mod.rs | awk -F':' '{print $1}') - 1 ))
+day=$(printf "day%02d" "$day_no")
+
+
+[ -e "$script_dir/src/solutions/${day}.rs" ] && exit 1
+
+echo "Remove this line and enter input for day $day_no" > "$script_dir/input/$day"
+nvim "$script_dir/input/$day"
+
+cat > "$script_dir/src/solutions/${day}.rs" <<-EOF
+use crate::input;
+
+pub fn solve() {
+    let x = input::file_for_day(${day_no});
+
+    println!("Solution part 1: {}", part_one(x.clone()));
+    println!("Solution part 2: {}", part_two(x));
+}
+
+fn part_one(_input: Vec<String>) -> i64 {
+    0
+}
+
+fn part_two(_input: Vec<String>) -> i64 {
+    0
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::input;
+
+    static SOLUTION_ONE: i64 = 0;
+    static SOLUTION_TWO: i64 = 0;
+    static TEST_INPUT: &str = r#""#;
+
+    #[test]
+    fn part_one() {
+        let x = input::test_vec(TEST_INPUT);
+        assert_eq!(super::part_one(x), SOLUTION_ONE);
+    }
+
+    #[test]
+    fn part_two() {
+        let x = input::test_vec(TEST_INPUT);
+        assert_eq!(super::part_two(x), SOLUTION_TWO);
+    }
+}
+EOF
+
+gsed -i "${day_no}i mod $day;" "$script_dir/src/solutions/mod.rs"
+gsed -i "s/ $day_no => todo!()/ $day_no => $day::solve()/" "$script_dir/src/solutions/mod.rs"
