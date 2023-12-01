@@ -25,56 +25,54 @@ fn part_one(input: Vec<String>) -> i64 {
 }
 
 fn part_two(mut input: Vec<String>) -> i64 {
+    let patterns: [(&str, i64); 18] = [
+        ("1", 1),
+        ("one", 1),
+        ("2", 2),
+        ("two", 2),
+        ("3", 3),
+        ("three", 3),
+        ("4", 4),
+        ("four", 4),
+        ("5", 5),
+        ("five", 5),
+        ("6", 6),
+        ("six", 6),
+        ("7", 7),
+        ("seven", 7),
+        ("8", 8),
+        ("eight", 8),
+        ("9", 9),
+        ("nine", 9),
+    ];
+
     input
         .iter_mut()
         .map(|line| {
-            let mut low = (None, None, 0);
-            let mut high = (None, None, 0);
+            let left = patterns
+                .into_iter()
+                .fold(
+                    (usize::MAX, i64::MAX),
+                    |(left_most_idx, left_most_value), (pattern, value)| match line.find(pattern) {
+                        Some(n) if n <= left_most_idx => (n, value * 10),
+                        _ => (left_most_idx, left_most_value),
+                    },
+                )
+                .1;
 
-            let digits = vec![
-                ("one", "1"),
-                ("two", "2"),
-                ("three", "3"),
-                ("four", "4"),
-                ("five", "5"),
-                ("six", "6"),
-                ("seven", "7"),
-                ("eight", "8"),
-                ("nine", "9"),
-            ];
+            let right = patterns
+                .into_iter()
+                .fold(
+                    (0, 0),
+                    |(right_most_idx, right_most_value), (pattern, value)| match line.rfind(pattern)
+                    {
+                        Some(n) if n >= right_most_idx => (n, value),
+                        _ => (right_most_idx, right_most_value),
+                    },
+                )
+                .1;
 
-            for digit in digits.iter() {
-                if let Some(n) = line.find(digit.0) {
-                    if n < low.2 || low.0.is_none() {
-                        low = (Some(digit.0), Some(digit.1), n);
-                    }
-                }
-
-                if let Some(n) = line.rfind(digit.0) {
-                    if n > high.2 || high.0.is_none() {
-                        high = (Some(digit.0), Some(digit.1), n);
-                    }
-                }
-            }
-
-            if low.0.is_some() {
-                line.insert_str(low.2, low.1.unwrap());
-            }
-
-            if high.0.is_some() {
-                let extra = if low.0.is_none() { 0 } else { 1 };
-                line.insert_str(high.2 + extra, high.1.unwrap());
-            }
-
-            let n = line
-                .chars()
-                .filter_map(|c| c.to_digit(10))
-                .collect::<Vec<_>>();
-
-            let first = n.first().unwrap();
-            let last = n.last().unwrap();
-
-            format!("{}{}", first, last).parse::<i64>().unwrap()
+            left + right
         })
         .sum()
 }
