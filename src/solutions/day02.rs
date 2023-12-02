@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use crate::input;
 
 pub fn solve() {
@@ -20,8 +22,10 @@ struct Game {
     sets: Vec<Set>,
 }
 
-impl Game {
-    fn new(input: &str) -> Self {
+impl FromStr for Game {
+    type Err = &'static str;
+
+    fn from_str(input: &str) -> Result<Self, Self::Err> {
         let line = input.replace("Game ", "");
         let mut parts = line.split(": ");
         let id = parts.next().unwrap().parse::<i64>().unwrap();
@@ -50,9 +54,11 @@ impl Game {
             game.sets.push(s);
         }
 
-        game
+        Ok(game)
     }
+}
 
+impl Game {
     fn min_cubes_pow(&self) -> i64 {
         let mut rgb = (0, 0, 0);
         for set in &self.sets {
@@ -62,27 +68,30 @@ impl Game {
         rgb.0 * rgb.1 * rgb.2
     }
 
-    fn valid_game(&self) -> bool {
-        !self
+    fn id_if_valid_or_zero(&self) -> i64 {
+        if !self
             .sets
             .iter()
             .any(|set| set.r > 12 || set.g > 13 || set.b > 14)
+        {
+            self.id
+        } else {
+            0
+        }
     }
 }
 
 fn part_one(input: Vec<String>) -> i64 {
     input
         .iter()
-        .map(|l| Game::new(l))
-        .map(|g| if g.valid_game() { g.id } else { 0 })
+        .map(|game| game.parse::<Game>().unwrap().id_if_valid_or_zero())
         .sum()
 }
 
 fn part_two(input: Vec<String>) -> i64 {
     input
         .iter()
-        .map(|l| Game::new(l))
-        .map(|g| g.min_cubes_pow())
+        .map(|game| game.parse::<Game>().unwrap().min_cubes_pow())
         .sum()
 }
 
