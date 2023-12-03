@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::input;
 
 pub fn solve() {
@@ -63,8 +65,89 @@ fn part_one(input: Vec<String>) -> i64 {
     numbers_with_adjecent.iter().sum()
 }
 
-fn part_two(_input: Vec<String>) -> i64 {
-    0
+fn part_two(input: Vec<String>) -> i64 {
+    let grid = input
+        .iter()
+        .map(|row| row.chars().collect::<Vec<_>>())
+        .collect::<Vec<_>>();
+
+    let mut gears = HashMap::new();
+    let mut matched_coordinate = (0, 0);
+
+    for i in 0..grid.len() {
+        let mut current_number = Vec::new();
+        let mut current_number_has_match = false;
+
+        for j in 0..grid[i].len() {
+            let col = grid[i][j];
+            let is_digit = col.is_ascii_digit();
+
+            if !is_digit {
+                if current_number_has_match {
+                    let value = current_number
+                        .iter()
+                        .collect::<String>()
+                        .parse::<i64>()
+                        .unwrap();
+
+                    insert_or_update(&mut gears, matched_coordinate, value);
+                }
+
+                current_number.clear();
+                current_number_has_match = false;
+                continue;
+            }
+
+            // Push this to our current number and just continue if we already found a match.
+            current_number.push(col);
+            if current_number_has_match {
+                continue;
+            }
+
+            match has_adjecent(&grid, (i, j)) {
+                (_, Some(coordinates)) => {
+                    matched_coordinate = coordinates;
+                    current_number_has_match = true;
+                }
+                _ => current_number_has_match = false,
+            }
+        }
+
+        // Don't forget to collect the number if it ended in the last column.
+        if !current_number.is_empty() && current_number_has_match {
+            let value = current_number
+                .iter()
+                .collect::<String>()
+                .parse::<i64>()
+                .unwrap();
+
+            insert_or_update(&mut gears, matched_coordinate, value);
+        }
+    }
+
+    gears
+        .iter()
+        .filter_map(|(_, v)| {
+            if v.len() == 2 {
+                Some(v.first().unwrap() * v.last().unwrap())
+            } else {
+                None
+            }
+        })
+        .sum()
+}
+
+fn insert_or_update(map: &mut HashMap<(usize, usize), Vec<i64>>, key: (usize, usize), value: i64) {
+    let entry = map.entry(key);
+
+    match entry {
+        std::collections::hash_map::Entry::Vacant(vacant) => {
+            vacant.insert(vec![value]);
+        }
+        std::collections::hash_map::Entry::Occupied(mut occupied) => {
+            occupied.get_mut().push(value);
+        }
+    }
 }
 
 fn has_adjecent(
@@ -99,7 +182,8 @@ fn has_adjecent(
         match grid[i1][j1] {
             '.' => continue,
             n if n.is_ascii_digit() => continue,
-            _ => return (true, Some((i1, j1))),
+            '*' => return (true, Some((i1, j1))),
+            _ => return (true, None),
         }
     }
 
@@ -111,7 +195,7 @@ mod tests {
     use crate::input;
 
     static SOLUTION_ONE: i64 = 4361;
-    static SOLUTION_TWO: i64 = 0;
+    static SOLUTION_TWO: i64 = 467835;
     static TEST_INPUT: &str = r#"
 467..114..
 ...*......
