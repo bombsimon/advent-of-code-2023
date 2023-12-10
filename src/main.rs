@@ -1,6 +1,7 @@
 use std::env;
 
 mod input;
+mod path;
 mod solutions;
 mod time;
 
