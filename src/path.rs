@@ -73,21 +73,17 @@ impl Grid {
         Grid { cells }
     }
 
-    pub fn add_wall(&mut self, row: usize, col: usize) {
-        self.cells[row][col] = Cell::Wall;
+    pub fn add_wall(&mut self, node: Node) {
+        self.cells[node.0][node.1] = Cell::Wall;
     }
 
-    pub fn cell_at(&self, row: usize, col: usize) -> Cell {
-        self.cells[row][col]
-    }
-
-    pub fn flood_fill(&mut self, start_row: usize, start_col: usize) {
+    pub fn flood_fill(&mut self, start_node: Node) {
         let mut visited = vec![vec![false; self.cells[0].len()]; self.cells.len()];
         let mut queue = VecDeque::new();
 
-        queue.push_back((start_row, start_col));
+        queue.push_back(start_node);
 
-        while let Some((row, col)) = queue.pop_front() {
+        while let Some(Node(row, col)) = queue.pop_front() {
             if row >= self.cells.len() || col >= self.cells[0].len() || visited[row][col] {
                 continue;
             }
@@ -101,19 +97,19 @@ impl Grid {
             self.cells[row][col] = Cell::Filled;
 
             if row > 0 && !visited[row - 1][col] {
-                queue.push_back((row - 1, col));
+                queue.push_back(Node(row - 1, col));
             }
 
             if row < self.cells.len() - 1 && !visited[row + 1][col] {
-                queue.push_back((row + 1, col));
+                queue.push_back(Node(row + 1, col));
             }
 
             if col > 0 && !visited[row][col - 1] {
-                queue.push_back((row, col - 1));
+                queue.push_back(Node(row, col - 1));
             }
 
             if col < self.cells[0].len() - 1 && !visited[row][col + 1] {
-                queue.push_back((row, col + 1));
+                queue.push_back(Node(row, col + 1));
             }
         }
     }
@@ -124,8 +120,8 @@ impl std::fmt::Debug for Grid {
         for row in &self.cells {
             for cell in row {
                 match cell {
-                    Cell::Empty => write!(f, "  ")?,
-                    Cell::Filled => write!(f, "░░")?,
+                    Cell::Empty => write!(f, ". ")?,
+                    Cell::Filled => write!(f, "▀ ")?,
                     Cell::Wall => write!(f, "▓▓")?,
                 };
             }
@@ -133,5 +129,22 @@ impl std::fmt::Debug for Grid {
         }
 
         Ok(())
+    }
+}
+
+pub(crate) fn manhattan_distance(src: Node, dst: Node) -> i64 {
+    (src.0 as i64 - dst.0 as i64).abs() + (src.1 as i64 - dst.1 as i64).abs()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_manhattan_distance() {
+        let start = Node(0, 0);
+        let end = Node(5, 6);
+
+        assert_eq!(manhattan_distance(start, end), 11);
     }
 }
